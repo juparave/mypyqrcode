@@ -14,7 +14,7 @@ from qrcode.image.styles.colormasks import (
     HorizontalGradiantColorMask,
     VerticalGradiantColorMask
 )
-from PIL import Image
+from PIL import Image, ImageDraw
 import argparse
 import sys
 
@@ -34,13 +34,14 @@ def parse_color(color_str):
     return tuple(int(color_str[i:i+2], 16) for i in (0, 2, 4))
 
 
-def overlay_logo_on_qr(qr_img, logo_path):
+def overlay_logo_on_qr(qr_img, logo_path, logo_gap=0):
     """
-    Overlay a logo image onto the center of a QR code.
+    Overlay a logo image onto the center of a QR code with optional gap.
     
     Args:
         qr_img (PIL.Image): QR code image
         logo_path (str): Path to logo image
+        logo_gap (int): Number of pixels gap between logo and QR code data
         
     Returns:
         PIL.Image: QR code with logo overlaid
@@ -50,7 +51,12 @@ def overlay_logo_on_qr(qr_img, logo_path):
     
     # Calculate the size of the logo (typically 10-20% of QR code size)
     qr_width, qr_height = qr_img.size
-    logo_size = min(qr_width, qr_height) // 5  # 20% of QR code size
+    logo_size = min(qr_width, qr_height) // 4  # 25% of QR code size
+    
+    # Reduce logo size further if logo_gap is specified
+    if logo_gap > 0:
+        # Reduce logo size to account for the gap
+        logo_size = logo_size - (logo_gap * 2)
     
     # Resize logo while maintaining aspect ratio
     logo.thumbnail((logo_size, logo_size), Image.LANCZOS)
@@ -62,18 +68,29 @@ def overlay_logo_on_qr(qr_img, logo_path):
     
     # Create a copy of the QR code to avoid modifying the original
     qr_with_logo = qr_img.copy()
-    
-    # Paste the logo onto the QR code
-    # If logo has transparency, use it as mask
+
+
+    # Draw a white border (rectangle) around the logo area if logo_gap > 0
+    if logo_gap > 0:
+        border_rect = [
+            x - logo_gap,
+            y - logo_gap,
+            x + logo_width + logo_gap,
+            y + logo_height + logo_gap
+        ]
+        draw = ImageDraw.Draw(qr_with_logo)
+        draw.rectangle(border_rect, fill="white")
+
+    # Paste the logo onto the QR code (after gap is created)
     if logo.mode == 'RGBA':
         qr_with_logo.paste(logo, (x, y), logo)
     else:
         qr_with_logo.paste(logo, (x, y))
-    
+
     return qr_with_logo
 
 
-def generate_qr_with_logo(data, logo_path=None, output_path="qr_code.png", style="rounded", 
+def generate_qr_with_logo(data, logo_path=None, logo_gap=0, output_path="qr_code.png", style="rounded", 
                          gradient_type="radial", gradient_color="#000000"):
     """
     Generate a QR code with optional logo embedding and custom styling.
@@ -81,6 +98,7 @@ def generate_qr_with_logo(data, logo_path=None, output_path="qr_code.png", style
     Args:
         data (str): The data to encode in the QR code
         logo_path (str, optional): Path to logo image to embed in QR code
+        logo_gap (int): Number of pixels gap between logo and QR code data
         output_path (str): Path where the QR code image will be saved
         style (str): Style for the QR code modules ("circle", "gapped", "horizontal", 
                     "rounded", "square", "vertical")
@@ -168,7 +186,7 @@ def generate_qr_with_logo(data, logo_path=None, output_path="qr_code.png", style
     
     # If logo is specified, overlay it manually
     if logo_path:
-        img = overlay_logo_on_qr(img, logo_path)
+        img = overlay_logo_on_qr(img, logo_path, logo_gap)
 
     # Save the image
     img.save(output_path)
@@ -179,6 +197,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate QR codes with optional logos")
     parser.add_argument("data", help="Data to encode in QR code")
     parser.add_argument("--logo", help="Path to logo image")
+    parser.add_argument("--logo-gap", type=int, default=0, help="Gap between logo and QR code data in pixels")
     parser.add_argument("--output", default="qr_code.png", help="Output file path")
     parser.add_argument("--style", choices=["circle", "gapped", "horizontal", "rounded", 
                                           "square", "vertical"], 
@@ -194,6 +213,7 @@ def main():
         generate_qr_with_logo(
             args.data, 
             args.logo, 
+            args.logo_gap,
             args.output, 
             args.style,
             args.gradient_type,

@@ -6,6 +6,7 @@ A Python project for generating custom QR codes with logos using astral and uv/u
 
 - Generate QR codes with custom styling
 - Embed logos in QR codes with gradient backgrounds
+- Add gaps around logos for cleaner appearance
 - Command-line interface for easy usage
 - Multiple module styles (circles, rounded squares, horizontal/vertical bars, etc.)
 - Gradient color options with customizable colors
@@ -43,8 +44,11 @@ python main.py "https://example.com" --gradient-type horizontal --gradient-color
 # Generate a QR code with a logo
 python main.py "https://example.com" --logo logo.png --output qr_with_logo.png
 
-# Generate a QR code with a logo and blue gradient background
-python main.py "https://example.com" --logo logo.png --gradient-color "#0000FF" --output qr_with_logo_and_gradient.png
+# Generate a QR code with a logo and 5-pixel gap
+python main.py "https://example.com" --logo logo.png --logo-gap 5 --output qr_with_logo_and_gap.png
+
+# Generate a QR code with a logo, blue gradient background, and 3-pixel gap
+python main.py "https://example.com" --logo logo.png --logo-gap 3 --gradient-color "#0000FF" --output qr_with_logo_gradient_and_gap.png
 ```
 
 ### Style Options
@@ -71,13 +75,17 @@ Colors are specified in hex format (#RRGGBB). Examples:
 - `#0000FF` - Blue
 - `#FFFF00` - Yellow
 
+### Logo Gap
+
+The `--logo-gap` parameter specifies the number of pixels of whitespace to leave around the logo, creating a cleaner appearance by preventing the logo from overlapping with QR code data dots.
+
 ### Python API
 
 ```python
 from main import generate_qr_with_logo
 
-# Generate QR code with embedded logo
-generate_qr_with_logo("https://example.com", "logo.png", "output.png")
+# Generate QR code with embedded logo and gap
+generate_qr_with_logo("https://example.com", "logo.png", logo_gap=5, output_path="output.png")
 
 # Generate QR code with circle modules
 generate_qr_with_logo("https://example.com", style="circle", output_path="circle_qr.png")
@@ -85,8 +93,8 @@ generate_qr_with_logo("https://example.com", style="circle", output_path="circle
 # Generate QR code with red radial gradient
 generate_qr_with_logo("https://example.com", gradient_color="#FF0000", output_path="red_qr.png")
 
-# Generate QR code with horizontal blue gradient and logo
-generate_qr_with_logo("https://example.com", logo_path="logo.png", 
+# Generate QR code with horizontal blue gradient, logo, and gap
+generate_qr_with_logo("https://example.com", logo_path="logo.png", logo_gap=3,
                      gradient_type="horizontal", gradient_color="#0000FF", 
                      output_path="blue_gradient_qr.png")
 ```

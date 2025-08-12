@@ -5,7 +5,7 @@ A Python project for generating custom QR codes with logos using astral and uv/u
 ## Features
 
 - Generate QR codes with custom styling
-- Embed logos in QR codes
+- Embed logos in QR codes with gradient backgrounds
 - Command-line interface for easy usage
 - Multiple module styles (circles, rounded squares, horizontal/vertical bars, etc.)
 - Gradient color options with customizable colors
@@ -42,6 +42,9 @@ python main.py "https://example.com" --gradient-type horizontal --gradient-color
 
 # Generate a QR code with a logo
 python main.py "https://example.com" --logo logo.png --output qr_with_logo.png
+
+# Generate a QR code with a logo and blue gradient background
+python main.py "https://example.com" --logo logo.png --gradient-color "#0000FF" --output qr_with_logo_and_gradient.png
 ```
 
 ### Style Options
@@ -82,9 +85,10 @@ generate_qr_with_logo("https://example.com", style="circle", output_path="circle
 # Generate QR code with red radial gradient
 generate_qr_with_logo("https://example.com", gradient_color="#FF0000", output_path="red_qr.png")
 
-# Generate QR code with horizontal blue gradient
-generate_qr_with_logo("https://example.com", gradient_type="horizontal", 
-                     gradient_color="#0000FF", output_path="blue_gradient_qr.png")
+# Generate QR code with horizontal blue gradient and logo
+generate_qr_with_logo("https://example.com", logo_path="logo.png", 
+                     gradient_type="horizontal", gradient_color="#0000FF", 
+                     output_path="blue_gradient_qr.png")
 ```
 
 ## Development

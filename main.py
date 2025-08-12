@@ -14,6 +14,7 @@ from qrcode.image.styles.colormasks import (
     HorizontalGradiantColorMask,
     VerticalGradiantColorMask
 )
+from PIL import Image
 import argparse
 import sys
 
@@ -31,6 +32,45 @@ def parse_color(color_str):
     if color_str.startswith('#'):
         color_str = color_str[1:]
     return tuple(int(color_str[i:i+2], 16) for i in (0, 2, 4))
+
+
+def overlay_logo_on_qr(qr_img, logo_path):
+    """
+    Overlay a logo image onto the center of a QR code.
+    
+    Args:
+        qr_img (PIL.Image): QR code image
+        logo_path (str): Path to logo image
+        
+    Returns:
+        PIL.Image: QR code with logo overlaid
+    """
+    # Open the logo image
+    logo = Image.open(logo_path)
+    
+    # Calculate the size of the logo (typically 10-20% of QR code size)
+    qr_width, qr_height = qr_img.size
+    logo_size = min(qr_width, qr_height) // 5  # 20% of QR code size
+    
+    # Resize logo while maintaining aspect ratio
+    logo.thumbnail((logo_size, logo_size), Image.LANCZOS)
+    
+    # Calculate position to center the logo
+    logo_width, logo_height = logo.size
+    x = (qr_width - logo_width) // 2
+    y = (qr_height - logo_height) // 2
+    
+    # Create a copy of the QR code to avoid modifying the original
+    qr_with_logo = qr_img.copy()
+    
+    # Paste the logo onto the QR code
+    # If logo has transparency, use it as mask
+    if logo.mode == 'RGBA':
+        qr_with_logo.paste(logo, (x, y), logo)
+    else:
+        qr_with_logo.paste(logo, (x, y))
+    
+    return qr_with_logo
 
 
 def generate_qr_with_logo(data, logo_path=None, output_path="qr_code.png", style="rounded", 
@@ -88,50 +128,47 @@ def generate_qr_with_logo(data, logo_path=None, output_path="qr_code.png", style
         print(f"Invalid color format: {gradient_color}. Using default black (#000000)")
         color_rgb = (0, 0, 0)
     
+    # Generate the QR code image with gradient
     # Choose color mask based on gradient type
     color_mask_class = gradient_map.get(gradient_type, RadialGradiantColorMask)
     
-    # Create color mask with appropriate parameters
-    if gradient_type == "radial":
+    # Create color mask with appropriate parameters for each type
+    if gradient_type in ["radial", "square"]:
         color_mask = color_mask_class(
             back_color=(255, 255, 255),
-            center_color=color_rgb,
-            edge_color=(0, 0, 0)  # Keep edge as black for better readability
-        )
-    elif gradient_type == "square":
-        color_mask = color_mask_class(
-            back_color=(255, 255, 255),
-            center_color=color_rgb,
-            edge_color=(0, 0, 0)  # Keep edge as black for better readability
+            center_color=(0, 0, 0),
+            edge_color=color_rgb
         )
     elif gradient_type == "horizontal":
         color_mask = color_mask_class(
             back_color=(255, 255, 255),
-            left_color=color_rgb,
-            right_color=(0, 0, 0)  # Keep right as black for better readability
+            left_color=(0, 0, 0),
+            right_color=color_rgb
         )
     elif gradient_type == "vertical":
         color_mask = color_mask_class(
             back_color=(255, 255, 255),
-            top_color=color_rgb,
-            bottom_color=(0, 0, 0)  # Keep bottom as black for better readability
-        )
-    
-    # Generate the QR code image
-    if logo_path:
-        # With logo requires high error correction
-        img = qr.make_image(
-            image_factory=StyledPilImage,
-            module_drawer=module_drawer,
-            embedded_image_path=logo_path
+            top_color=(0, 0, 0),
+            bottom_color=color_rgb
         )
     else:
-        # Without logo - can use styling options
-        img = qr.make_image(
-            image_factory=StyledPilImage,
-            module_drawer=module_drawer,
-            color_mask=color_mask
+        # Default to radial gradient
+        color_mask = color_mask_class(
+            back_color=(255, 255, 255),
+            center_color=(0, 0, 0),
+            edge_color=color_rgb
         )
+    
+    # Generate QR code with gradient
+    img = qr.make_image(
+        image_factory=StyledPilImage,
+        module_drawer=module_drawer,
+        color_mask=color_mask
+    )
+    
+    # If logo is specified, overlay it manually
+    if logo_path:
+        img = overlay_logo_on_qr(img, logo_path)
 
     # Save the image
     img.save(output_path)

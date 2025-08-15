@@ -91,7 +91,7 @@ def overlay_logo_on_qr(qr_img, logo_path, logo_gap=0):
 
 
 def generate_qr_with_logo(data, logo_path=None, logo_gap=0, output_path="qr_code.png", style="rounded", 
-                         gradient_type="radial", gradient_color="#000000"):
+                         gradient_type="radial", gradient_color="#000000", size="normal"):
     """
     Generate a QR code with optional logo embedding and custom styling.
 
@@ -104,16 +104,27 @@ def generate_qr_with_logo(data, logo_path=None, logo_gap=0, output_path="qr_code
                     "rounded", "square", "vertical")
         gradient_type (str): Type of gradient ("radial", "square", "horizontal", "vertical")
         gradient_color (str): Color for gradient in hex format (#RRGGBB)
+        size (str): Size of the QR code ("normal", "large", "xlarge")
 
     Returns:
         None
     """
-    # Map style names to module drawers
+    # Map size options to box_size values
+    size_map = {
+        "normal": 10,
+        "large": 15,
+        "xlarge": 20
+    }
+    
+    # Get box_size based on size parameter
+    box_size = size_map.get(size, 10)
+    
+    # Map style names to module drawers (with size-aware rounded style)
     style_map = {
         "circle": CircleModuleDrawer(),
         "gapped": GappedSquareModuleDrawer(),
         "horizontal": HorizontalBarsDrawer(),
-        "rounded": RoundedModuleDrawer(),
+        "rounded": RoundedModuleDrawer(radius_ratio=0.5),  # Adjust radius based on module size
         "square": SquareModuleDrawer(),
         "vertical": VerticalBarsDrawer()
     }
@@ -130,7 +141,7 @@ def generate_qr_with_logo(data, logo_path=None, logo_gap=0, output_path="qr_code
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=10,
+        box_size=box_size,
         border=4,
     )
     qr.add_data(data)
@@ -206,6 +217,8 @@ def main():
                        default="radial", help="Gradient type for QR code")
     parser.add_argument("--gradient-color", default="#000000", 
                        help="Gradient color in hex format (#RRGGBB)")
+    parser.add_argument("--size", choices=["normal", "large", "xlarge"],
+                       default="normal", help="Size of the QR code")
     
     args = parser.parse_args()
     
@@ -217,7 +230,8 @@ def main():
             args.output, 
             args.style,
             args.gradient_type,
-            args.gradient_color
+            args.gradient_color,
+            args.size
         )
     except Exception as e:
         print(f"Error generating QR code: {e}")
